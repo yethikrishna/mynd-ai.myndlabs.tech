@@ -1,0 +1,453 @@
+# Instincts generated from https://github.com/yethikrishna/mynd-ai.myndlabs.tech
+# Generated: 2026-06-27T06:09:42.136Z
+# Version: 2.0
+# NOTE: This file supplements (does not replace) any existing curated instincts.
+# High-confidence manually curated instincts should be preserved alongside these.
+
+---
+id: mynd-ai.myndlabs.tech-commit-length
+trigger: "when writing a commit message"
+confidence: 0.6
+domain: git
+source: repo-analysis
+source_repo: https://github.com/yethikrishna/mynd-ai.myndlabs.tech
+---
+
+# Mynd Ai.myndlabs.tech Commit Length
+
+## Action
+
+Write moderate-length commit messages (~66 characters)
+
+## Evidence
+
+- Average commit message length: 66 chars
+- Based on 4 commits
+
+---
+id: mynd-ai.myndlabs.tech-naming-files
+trigger: "when creating a new file"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/yethikrishna/mynd-ai.myndlabs.tech
+---
+
+# Mynd Ai.myndlabs.tech Naming Files
+
+## Action
+
+Use camelCase naming convention
+
+## Evidence
+
+- Analyzed file naming patterns in repository
+- Dominant pattern: camelCase
+
+---
+id: mynd-ai.myndlabs.tech-import-alias
+trigger: "when importing modules"
+confidence: 0.85
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/yethikrishna/mynd-ai.myndlabs.tech
+---
+
+# Mynd Ai.myndlabs.tech Import Alias
+
+## Action
+
+Use path aliases (@/, ~/) instead of relative imports
+
+## Evidence
+
+- Import analysis shows alias pattern
+- Example: import { x } from '@/lib/x'
+
+---
+id: mynd-ai.myndlabs.tech-export-style
+trigger: "when exporting from a module"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/yethikrishna/mynd-ai.myndlabs.tech
+---
+
+# Mynd Ai.myndlabs.tech Export Style
+
+## Action
+
+Prefer mixed exports
+
+## Evidence
+
+- Export pattern analysis
+- Dominant style: mixed
+
+---
+id: mynd-ai.myndlabs.tech-test-separate
+trigger: "when writing tests"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/yethikrishna/mynd-ai.myndlabs.tech
+---
+
+# Mynd Ai.myndlabs.tech Test Separate
+
+## Action
+
+Place tests in the tests/ or __tests__/ directory, mirroring src structure
+
+## Evidence
+
+- Separate test directory pattern detected
+- Tests live in dedicated test folders
+
+---
+id: mynd-ai.myndlabs.tech-workflow-add-backend-feature-with-api-and-admin-endpoints
+trigger: "when doing add backend feature with api and admin endpoints"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/yethikrishna/mynd-ai.myndlabs.tech
+---
+
+# Mynd Ai.myndlabs.tech Workflow Add Backend Feature With Api And Admin Endpoints
+
+## Action
+
+Follow the add-backend-feature-with-api-and-admin-endpoints workflow:
+1. Implement core logic in a new or existing backend Python module under core/backend/mynd/ or core/backend/mynd/db/
+2. Add or update API endpoints in core/backend/mynd/server/product_api.py or core/backend/mynd/llm_auth/router.py
+3. If needed, add helper functions or models in core/backend/mynd/db/ or core/backend/mynd/isolation/
+4. Update or create migration scripts if the database schema changes (core/backend/alembic/versions/)
+5. Update documentation in ARCHITECTURE.md and/or core/backend/mynd/README.md
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: core/backend/mynd/server/product_api.py, core/backend/mynd/llm_auth/router.py, core/backend/mynd/db/*.py
+
+---
+id: mynd-ai.myndlabs.tech-workflow-add-frontend-feature-or-app-shell
+trigger: "when doing add frontend feature or app shell"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/yethikrishna/mynd-ai.myndlabs.tech
+---
+
+# Mynd Ai.myndlabs.tech Workflow Add Frontend Feature Or App Shell
+
+## Action
+
+Follow the add-frontend-feature-or-app-shell workflow:
+1. Create or update React components in core/web/src/mynd/components/ or overlays/
+2. Add or update route files in core/web/src/app/[productSlug]/
+3. Implement or modify hooks in core/web/src/mynd/hooks.ts or useProductSlug.ts
+4. Update or create context providers in core/web/src/mynd/ProductContext.tsx
+5. Update documentation in core/web/src/mynd/README.md
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: core/web/src/mynd/components/*.tsx, core/web/src/app/[productSlug]/**/*.tsx, core/web/src/mynd/hooks.ts
+
+---
+id: mynd-ai.myndlabs.tech-workflow-update-architecture-and-ops-documentation
+trigger: "when doing update architecture and ops documentation"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/yethikrishna/mynd-ai.myndlabs.tech
+---
+
+# Mynd Ai.myndlabs.tech Workflow Update Architecture And Ops Documentation
+
+## Action
+
+Follow the update-architecture-and-ops-documentation workflow:
+1. Update ARCHITECTURE.md with new features or deployment topologies
+2. Update or create ops/deploy/ files (Dockerfile, cloudrun-service, .env.example, README.md) as needed
+3. Update README.md files in relevant directories
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: ARCHITECTURE.md, ops/deploy/README.md, ops/deploy/*.yaml
+
+---
+id: mynd-ai.myndlabs.tech-instinct-file-naming
+trigger: "When creating a new file in the codebase"
+confidence: 0.85
+domain: code-style
+source: repo-analysis
+source_repo: yethikrishna/mynd-ai.myndlabs.tech
+---
+
+# Mynd Ai.myndlabs.tech Instinct File Naming
+
+## Action
+
+Name the file using camelCase (e.g., myNewFile.py)
+
+## Evidence
+
+- Pattern in namingConventions.files: camelCase
+
+---
+id: mynd-ai.myndlabs.tech-instinct-function-naming
+trigger: "When defining a new function"
+confidence: 0.85
+domain: code-style
+source: repo-analysis
+source_repo: yethikrishna/mynd-ai.myndlabs.tech
+---
+
+# Mynd Ai.myndlabs.tech Instinct Function Naming
+
+## Action
+
+Name the function using camelCase (e.g., getProductData)
+
+## Evidence
+
+- Pattern in namingConventions.functions: camelCase
+
+---
+id: mynd-ai.myndlabs.tech-instinct-class-naming
+trigger: "When defining a new class"
+confidence: 0.85
+domain: code-style
+source: repo-analysis
+source_repo: yethikrishna/mynd-ai.myndlabs.tech
+---
+
+# Mynd Ai.myndlabs.tech Instinct Class Naming
+
+## Action
+
+Name the class using PascalCase (e.g., ProductManager)
+
+## Evidence
+
+- Pattern in namingConventions.classes: PascalCase
+
+---
+id: mynd-ai.myndlabs.tech-instinct-constant-naming
+trigger: "When defining a constant"
+confidence: 0.85
+domain: code-style
+source: repo-analysis
+source_repo: yethikrishna/mynd-ai.myndlabs.tech
+---
+
+# Mynd Ai.myndlabs.tech Instinct Constant Naming
+
+## Action
+
+Name the constant using SCREAMING_SNAKE_CASE (e.g., MAX_RETRIES)
+
+## Evidence
+
+- Pattern in namingConventions.constants: SCREAMING_SNAKE_CASE
+
+---
+id: mynd-ai.myndlabs.tech-instinct-import-alias
+trigger: "When importing modules"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: yethikrishna/mynd-ai.myndlabs.tech
+---
+
+# Mynd Ai.myndlabs.tech Instinct Import Alias
+
+## Action
+
+Use import aliases instead of full module paths
+
+## Evidence
+
+- Pattern in importStyle: alias
+
+---
+id: mynd-ai.myndlabs.tech-instinct-export-mixed
+trigger: "When exporting functions or classes"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: yethikrishna/mynd-ai.myndlabs.tech
+---
+
+# Mynd Ai.myndlabs.tech Instinct Export Mixed
+
+## Action
+
+Use both named and default exports as appropriate
+
+## Evidence
+
+- Pattern in exportStyle: mixed
+
+---
+id: mynd-ai.myndlabs.tech-instinct-test-location
+trigger: "When adding tests for new or existing code"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: yethikrishna/mynd-ai.myndlabs.tech
+---
+
+# Mynd Ai.myndlabs.tech Instinct Test Location
+
+## Action
+
+Place test files in a separate test directory, not alongside source files
+
+## Evidence
+
+- Pattern in architecture.folderStructure.testLocation: separate
+
+---
+id: mynd-ai.myndlabs.tech-instinct-test-pattern
+trigger: "When writing tests for backend or frontend code"
+confidence: 0.7
+domain: testing
+source: repo-analysis
+source_repo: yethikrishna/mynd-ai.myndlabs.tech
+---
+
+# Mynd Ai.myndlabs.tech Instinct Test Pattern
+
+## Action
+
+Follow the module organization and place tests in corresponding test directories reflecting the hybrid structure
+
+## Evidence
+
+- Pattern in architecture.moduleOrganization: hybrid
+
+---
+id: mynd-ai.myndlabs.tech-instinct-commit-freeform
+trigger: "When writing a commit message"
+confidence: 0.9
+domain: git
+source: repo-analysis
+source_repo: yethikrishna/mynd-ai.myndlabs.tech
+---
+
+# Mynd Ai.myndlabs.tech Instinct Commit Freeform
+
+## Action
+
+Write a freeform, descriptive commit message without a strict prefix, summarizing the change in one line
+
+## Evidence
+
+- Pattern in commits.type: freeform
+- Examples: 'Complete the mynd Core platform: inference wiring, isolation, frontend'
+
+---
+id: mynd-ai.myndlabs.tech-instinct-commit-length
+trigger: "When writing a commit message"
+confidence: 0.8
+domain: git
+source: repo-analysis
+source_repo: yethikrishna/mynd-ai.myndlabs.tech
+---
+
+# Mynd Ai.myndlabs.tech Instinct Commit Length
+
+## Action
+
+Keep the commit message concise, typically under 70 characters
+
+## Evidence
+
+- Pattern in commits.averageLength: 66
+
+---
+id: mynd-ai.myndlabs.tech-instinct-backend-feature-workflow
+trigger: "When someone wants to add a new backend capability or admin API endpoint"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: yethikrishna/mynd-ai.myndlabs.tech
+---
+
+# Mynd Ai.myndlabs.tech Instinct Backend Feature Workflow
+
+## Action
+
+Implement core logic in backend Python module, update API endpoints, add helpers/models if needed, update migrations if schema changes, and update documentation
+
+## Evidence
+
+- Workflow: add-backend-feature-with-api-and-admin-endpoints
+- Files: core/backend/mynd/server/product_api.py, core/backend/mynd/llm_auth/router.py, core/backend/mynd/db/*.py, core/backend/mynd/isolation/*.py, core/backend/alembic/versions/*.py, ARCHITECTURE.md, core/backend/mynd/README.md
+
+---
+id: mynd-ai.myndlabs.tech-instinct-frontend-feature-workflow
+trigger: "When someone wants to add a new frontend page, shell, or UI component for a product"
+confidence: 0.85
+domain: workflow
+source: repo-analysis
+source_repo: yethikrishna/mynd-ai.myndlabs.tech
+---
+
+# Mynd Ai.myndlabs.tech Instinct Frontend Feature Workflow
+
+## Action
+
+Create or update React components, add/modify route files, implement hooks, update context providers, and update frontend documentation
+
+## Evidence
+
+- Workflow: add-frontend-feature-or-app-shell
+- Files: core/web/src/mynd/components/*.tsx, core/web/src/app/[productSlug]/**/*.tsx, core/web/src/mynd/hooks.ts, core/web/src/mynd/useProductSlug.ts, core/web/src/mynd/ProductContext.tsx, core/web/src/mynd/README.md
+
+---
+id: mynd-ai.myndlabs.tech-instinct-update-docs-workflow
+trigger: "When someone adds a significant feature or deployment option that needs documentation"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: yethikrishna/mynd-ai.myndlabs.tech
+---
+
+# Mynd Ai.myndlabs.tech Instinct Update Docs Workflow
+
+## Action
+
+Update ARCHITECTURE.md, ops/deploy files, and relevant README.md files to document the change
+
+## Evidence
+
+- Workflow: update-architecture-and-ops-documentation
+- Files: ARCHITECTURE.md, ops/deploy/README.md, ops/deploy/*.yaml, ops/deploy/Dockerfile.mynd, ops/deploy/.env.example, core/backend/mynd/README.md, core/web/src/mynd/README.md
+
+---
+id: mynd-ai.myndlabs.tech-instinct-error-handling-try-catch
+trigger: "When handling errors in code"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: yethikrishna/mynd-ai.myndlabs.tech
+---
+
+# Mynd Ai.myndlabs.tech Instinct Error Handling Try Catch
+
+## Action
+
+Use try-catch blocks for error handling instead of custom error classes or global handlers
+
+## Evidence
+
+- Pattern in errorHandling.style: try-catch
+- Pattern in errorHandling.customErrorClasses: false
+
