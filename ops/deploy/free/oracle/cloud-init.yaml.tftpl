@@ -1,0 +1,109 @@
+#cloud-config
+# Provisions the full Onyx + mynd stack on first boot.
+package_update: true
+packages:
+  - git
+  - curl
+  - ca-certificates
+  - openssl
+
+write_files:
+  - path: /opt/mynd-deploy.sh
+    permissions: "0755"
+    content: |
+      #!/usr/bin/env bash
+      # Builds + runs the Onyx+mynd stack, then issues TLS once DNS points here.
+      set -euxo pipefail
+      exec > >(tee -a /var/log/mynd-deploy.log) 2>&1
+
+      DOMAIN="${domain}"
+      EMAIL="${email}"
+      REPO_URL="${repo_url}"
+      REPO_BRANCH="${repo_branch}"
+      GITHUB_TOKEN="${github_token}"
+      MYND_PRODUCT="${mynd_product}"
+
+      APP_DIR=/opt/mynd
+      COMPOSE_DIR="$APP_DIR/core/deployment/docker_compose"
+      OVERRIDE="$APP_DIR/ops/deploy/free/docker-compose.mynd.override.yml"
+
+      # --- Docker (official convenience script; includes compose plugin) ---
+      if ! command -v docker >/dev/null 2>&1; then
+        curl -fsSL https://get.docker.com | sh
+        systemctl enable --now docker
+      fi
+
+      # --- Clone (token only used if the repo is private) ---
+      if [ ! -d "$APP_DIR/.git" ]; then
+        AUTH_URL="$REPO_URL"
+        if [ -n "$GITHUB_TOKEN" ]; then
+          AUTH_URL="$(echo "$REPO_URL" | sed -e "s#https://#https://x-access-token:$GITHUB_TOKEN@#")"
+        fi
+        git clone --branch "$REPO_BRANCH" --depth 1 "$AUTH_URL" "$APP_DIR"
+      fi
+
+      cd "$COMPOSE_DIR"
+
+      # --- Generate secrets + .env once ---
+      if [ ! -f .env ]; then
+        gen() { openssl rand -base64 24 | tr -d '\n' | tr '+/' '-_'; }
+        FERNET="$(openssl rand 32 | base64 | tr '+/' '-_' | tr -d '\n')"
+        cat > .env <<EOF
+      # --- domain / TLS ---
+      DOMAIN=$DOMAIN
+      EMAIL=$EMAIL
+      WEB_DOMAIN=https://$DOMAIN
+
+      # --- auth: email/password to start (first signup becomes admin) ---
+      AUTH_TYPE=basic
+      SESSION_EXPIRE_TIME_SECONDS=604800
+      ENCRYPTION_KEY_SECRET=$(gen)
+
+      # --- datastores (generated; internal only) ---
+      POSTGRES_PASSWORD=$(gen)
+      OPENSEARCH_ADMIN_PASSWORD=$(gen)Aa1!
+      S3_AWS_ACCESS_KEY_ID=$(gen)
+      S3_AWS_SECRET_ACCESS_KEY=$(gen)
+
+      # --- mynd layer ---
+      MYND_CONFIG_HOST_DIR=$APP_DIR/config
+      MYND_CONFIG_DIR=/app/config
+      MYND_KMS_PROVIDER=local
+      MYND_LOCAL_ENCRYPTION_KEY=$FERNET
+      MYND_RETRIEVAL_ISOLATION=false
+      MYND_PRODUCT=$MYND_PRODUCT
+      NEXT_PUBLIC_MYND_PRODUCT=$MYND_PRODUCT
+      EOF
+      fi
+
+      export $(grep -E '^(DOMAIN|EMAIL)=' .env | xargs)
+
+      COMPOSE="docker compose --env-file .env -f docker-compose.prod.yml -f $OVERRIDE"
+
+      # --- Build images from source (bakes in the mynd layer; ARM/arm64) ---
+      $COMPOSE build
+
+      # --- Wait until DNS for $DOMAIN points at THIS instance, then issue TLS ---
+      MY_IP="$(curl -fsS https://api.ipify.org || true)"
+      for i in $(seq 1 60); do
+        RESOLVED="$(getent hosts "$DOMAIN" | awk '{print $1}' | head -1 || true)"
+        if [ -n "$RESOLVED" ] && { [ -z "$MY_IP" ] || [ "$RESOLVED" = "$MY_IP" ]; }; then
+          echo "DNS for $DOMAIN -> $RESOLVED; requesting certificate."
+          (cd "$COMPOSE_DIR" && DOMAIN="$DOMAIN" EMAIL="$EMAIL" bash init-letsencrypt.sh) || true
+          break
+        fi
+        echo "Waiting for DNS A record $DOMAIN -> $MY_IP (attempt $i/60)…"
+        sleep 30
+      done
+
+      # --- Bring the full stack up ---
+      $COMPOSE up -d
+
+      # --- Seed product agents into Onyx personas (idempotent) ---
+      sleep 30
+      $COMPOSE exec -T api_server python -m mynd.products.seed || true
+
+      echo "mynd deploy finished. App: https://$DOMAIN"
+
+runcmd:
+  - bash /opt/mynd-deploy.sh || true

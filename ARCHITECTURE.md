@@ -57,17 +57,51 @@ layout literally.
 
 ## 3. How the layer attaches to Onyx
 
-Onyx builds its app in `onyx/main.py::get_application()`. The only upstream
-edit is one call just before `return application`:
+There are exactly **three** small upstream edits, all guarded and rebase-friendly:
 
-```python
-from mynd.integration import register_mynd
-register_mynd(application)
-```
+1. `onyx/main.py::get_application()` — one call before `return application`:
 
-`register_mynd` (idempotent) installs the product-context middleware and mounts
-the config / credential / oauth routers. **Onyx's own auth, RBAC, chat, RAG,
-and connectors are untouched.**
+   ```python
+   from mynd.integration import register_mynd
+   register_mynd(application)
+   ```
+
+   `register_mynd` (idempotent) installs the product-context middleware and
+   mounts the config / credential / oauth routers.
+
+2. `onyx/llm/factory.py::llm_from_provider()` — one call at the top:
+
+   ```python
+   from mynd.llm_auth.credential_injection import maybe_override_provider
+   llm_provider = maybe_override_provider(llm_provider)
+   ```
+
+   A no-op for the system scope; substitutes a user/org BYO credential when one
+   applies to the current request.
+
+3. `onyx/server/query_and_chat/chat_backend.py::handle_send_chat_message()` —
+   one guarded call that records a `chat.send` audit entry for the active
+   product (no-op outside a product).
+
+**Onyx's own auth, RBAC, chat, RAG, and connectors are otherwise untouched.**
+
+### Threading context without signature changes
+
+The product slug and the authenticated user/org are placed on request-scoped
+`ContextVar`s (`mynd.context`). The middleware sets the slug; the
+`bind_request_context` dependency sets user/org and records the product session.
+Because FastAPI runs the dependency, endpoint, and Onyx's synchronous DB/LLM
+calls in the same task, deep Onyx code (the LLM factory) reads these vars
+**without any Onyx function signature changing**.
+
+### Carrying product context to Onyx's own API calls
+
+Onyx's chat/connector calls hit `/api/...` (a reserved prefix), so the slug
+can't come from the path. `resolve_request_slug` resolves it in order:
+**path → `X-Mynd-Product` header → `mynd_product` cookie**. The frontend
+`ProductProvider` sets the cookie on entering a product, so every subsequent
+Onyx API call (chat included) is product-scoped — which is what makes
+BYO-credential resolution and per-product audit fire for the chat experience.
 
 ## 4. Request flow
 
@@ -81,6 +115,26 @@ ProductContextMiddleware  ──▶  request.state.product_slug = "eng"
 handler  ──▶  resolve_llm_credential(user→org→system)
          ──▶  log_product_action(... product_slug, llm_credential_scope ...)
 ```
+
+## 4a. Deployment topologies — are these separate apps?
+
+The products are **config overlays on one platform**, not six separate
+codebases. But the *same image* supports two deployment shapes:
+
+| | Shared (default) | Standalone per-product |
+| --- | --- | --- |
+| URL | `ai.myndlabs.tech/<slug>` | each product on its own domain/service |
+| Env | `MYND_PRODUCT` unset | `MYND_PRODUCT=<slug>` (+ `NEXT_PUBLIC_MYND_PRODUCT`) |
+| Process | one service, all products | one service **per product** |
+| DB | shared (`mynd_shared` + Onyx) | can be a dedicated DB per product |
+| Code | one image | **the same image**, pinned by env |
+
+In standalone mode, `resolve_request_slug` returns the pinned slug for *every*
+request (path/header/cookie ignored), so the deployment behaves end-to-end as
+that single product's app. This is what makes each product **individually
+deployable as a real app** — without forking the code. To a user, both shapes
+look like distinct branded apps; the difference is purely operational (one
+service vs. many).
 
 ## 5. Shared auth, per-product isolation
 
@@ -104,19 +158,69 @@ Three scopes, resolved in precedence order **user → org → system**:
 
 Secrets are envelope-encrypted (`mynd.llm_auth.crypto`: GCP/AWS KMS in prod,
 Fernet locally) and never returned by the API. OAuth providers use the callback
-`https://ai.myndlabs.tech/oauth/callback/<provider>`.
+`https://ai.myndlabs.tech/oauth/callback/<provider>`; a Celery task
+(`mynd.llm_auth.token_refresh`, scheduled via `mynd.celery_schedule`) refreshes
+tokens nearing expiry. Resolution + injection happen in
+`mynd.llm_auth.credential_injection` at the `llm_from_provider` hook, and the
+resolved scope is recorded on the audit log.
+
+### Data isolation (`mynd.isolation`)
+
+- `apply_retrieval_isolation` — wired at the single `IndexFilters` finalize
+  point (`onyx/context/search/pipeline.py`); ANDs a `mynd_product`/`mynd_org`
+  document **tag** into every search (reusing Onyx's existing Vespa tag filter,
+  no schema change), so one product/org's documents never surface in another's
+  (combined with Onyx ACLs, never the sole gate). Gated by
+  `MYND_RETRIEVAL_ISOLATION` (**OFF by default**). The index-time half is wired:
+  bind a connector to a product (`PUT /api/product/<slug>/connectors/<cc_pair_id>`,
+  stored in `mynd_shared.connector_product_map`) and `mynd.isolation.indexing`
+  tags that connector's documents with `mynd_product`/`mynd_org` at index time
+  (one guarded call in `onyx/indexing/indexing_pipeline.py`). To switch on: bind
+  connectors, re-index so existing docs get tagged, then set the flag.
+- `index_namespace` / `retrieval_filter` — namespace strings/filters for callers
+  that key their own indices by product+org.
+- `connector_isolation` — a product may only use connectors enumerated in its
+  `connectors.yaml`, with the declared scopes/filters; `assert_connector_allowed`
+  enforces it.
 
 ## 7. Adding a product
 
 Config-only: create `config/<new-slug>/{product,rbac,agents,connectors}.yaml`.
 The slug is discovered automatically by the config loader and routing
-middleware. Add an `overlay/<slug>-overlay.tsx` only if you need custom UI.
+middleware. Then seed the product's agents into Onyx personas:
 
-## 8. Frontend (status)
+```bash
+python -m mynd.products.seed   # idempotent; run per tenant in cloud mode
+```
 
-The Onyx **Opal** design system (`core/web/src/{components,layouts,sections,
-views}`) is reused as-is. Per-product theming/branding comes from
-`GET /api/config/<slug>`. **Remaining frontend work** (not in this foundation
-commit): the product-context provider that fetches config at boot, the
-`/<slug>/settings/models` BYO-key UI, and per-product marketing pages composed
-from existing sections.
+`mynd.products.agent_seeder` upserts a persona named `[mynd:<slug>] <Agent>`
+per `agents.yaml` entry, so the app-shell sidebar surfaces agents that actually
+work in Onyx chat. Add an overlay (`web/src/mynd/overlays/<slug>.tsx`) only if
+you need custom UI.
+
+## 8. Frontend (`core/web/src/mynd`)
+
+The Onyx **Opal** design system (`core/web/src/{refresh-components,layouts,
+sections,views}`) is reused as-is; only content + accent color vary per product.
+
+- `ProductProvider` / `useProduct()` fetch `GET /api/config/<slug>` and apply
+  `--mynd-primary` to the product subtree.
+- `[productSlug]/page.tsx` → `ProductLanding`: config-driven marketing page
+  (hero, features, connectors, overlay widgets). Onyx static routes take
+  precedence over the dynamic `[productSlug]` segment.
+- `[productSlug]/settings/models/page.tsx` → `ModelSettingsPage`: "platform
+  defaults" vs "bring your own key" (user + org scopes), optional base URL for
+  OpenAI-compatible/proxy/local endpoints, and OAuth "Connect" for providers
+  that support it.
+- `[productSlug]/app/page.tsx` → `ProductAppShell` + `ProductSidebar`: the
+  product-branded shell. The sidebar surfaces enabled agents (seeded personas)
+  and connectors from config, gates admin actions by capabilities
+  (`/api/product/<slug>/capabilities`), and launches Onyx's real chat with the
+  product's agent. It does not re-mount Onyx's chat client; the `mynd_product`
+  cookie carries product context into Onyx's own API calls instead.
+- `overlays/` — buildable product-overlay registry (the repo-root `/overlay`
+  holds the contract; overlays live here because they use the `@/` alias).
+
+> Build status: the frontend follows Onyx's conventions and primitives but was
+> authored without a local `node_modules` (no `tsc`/Next build in this
+> environment). Run `bun install && bunx tsc --noEmit` before shipping.

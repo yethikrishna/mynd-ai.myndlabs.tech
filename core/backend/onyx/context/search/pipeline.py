@@ -107,6 +107,12 @@ def _build_index_filters(
         hierarchy_node_ids=hierarchy_node_ids,
     )
 
+    # mynd Core: per-product retrieval isolation (no-op unless
+    # MYND_RETRIEVAL_ISOLATION is enabled and the request is product-scoped).
+    from mynd.isolation.retrieval import apply_retrieval_isolation
+
+    final_filters = apply_retrieval_isolation(final_filters)
+
     return final_filters
 
 

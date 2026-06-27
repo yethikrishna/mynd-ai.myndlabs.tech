@@ -17,11 +17,22 @@ Onyx. See `/ARCHITECTURE.md` for the full conceptual→physical mapping.
 | Module | Responsibility |
 | --- | --- |
 | `mynd.db.models` | `mynd_shared` SQLAlchemy tables (sessions, audit, credentials) |
-| `mynd.routing` | `ProductContextMiddleware` → `request.state.product_slug` |
+| `mynd.context` | Request-scoped `ContextVar`s (slug/user/org/scope) |
+| `mynd.routing` | `ProductContextMiddleware` → slug on `request.state` + context |
+| `mynd.dependencies` | `bind_request_context` — binds user/org, records session |
 | `mynd.platform_config` | Loads `config/<slug>/*.yaml` into typed `ProductConfig` |
 | `mynd.auth` | Session tracking, audit logging, per-product RBAC resolution |
-| `mynd.llm_auth` | User/org credentials, OAuth, KMS crypto, resolver (user→org→system) |
-| `mynd.server.config_router` | `GET /api/config[/{slug}]` for the frontend |
+| `mynd.llm_auth` | User/org credentials, OAuth, KMS crypto, resolver, injection |
+| `mynd.llm_auth.credential_injection` | Applies BYO creds at `llm_from_provider` |
+| `mynd.llm_auth.token_refresh` | Celery task refreshing OAuth tokens |
+| `mynd.isolation` | Index namespacing, connector scope, retrieval isolation (query + index-time tagging) |
+| `mynd.db.connector_map` | Connector→product binding (`connector_product_map`) |
+| `mynd.settings` | Runtime flags (`MYND_PRODUCT`, `MYND_RETRIEVAL_ISOLATION`) |
+| `mynd.products.agent_seeder` | Seed `agents.yaml` → Onyx personas (`python -m mynd.products.seed`) |
+| `mynd.auth.audit_hooks` | Best-effort call-site hooks (e.g. `chat.send`) |
+| `mynd.server.config_router` | `GET /api/config[/{slug}]` (+ `/agents`) |
+| `mynd.server.product_api` | `GET /api/product/{slug}/capabilities` |
+| `mynd.celery_schedule` | Beat schedule additions (token refresh) |
 | `mynd.integration` | `register_mynd(app)` — the single wiring point |
 
 ## Wiring

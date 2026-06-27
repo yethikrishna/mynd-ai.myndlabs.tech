@@ -161,3 +161,22 @@ class OrgLLMCredential(_LLMCredentialMixin, Base):
     )
 
     org_id: Mapped[str] = mapped_column(String, index=True)
+
+
+class ConnectorProductMap(Base):
+    """Binds an Onyx connector (cc_pair) to a product.
+
+    Used to (a) tag a connector's documents with its product at index time
+    (enabling retrieval isolation, plan §8.1/§8.2) and (b) scope connector
+    management to a product. One connector belongs to at most one product.
+    """
+
+    __tablename__ = "connector_product_map"
+    __table_args__ = {"schema": MYND_SHARED_SCHEMA}
+
+    # cc_pair id is the natural key (a connector instance).
+    cc_pair_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=False)
+    product_slug: Mapped[str] = mapped_column(String, index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )

@@ -302,6 +302,13 @@ def llm_from_provider(
     temperature: float | None = None,
     additional_headers: dict[str, str] | None = None,
 ) -> LLM:
+    # mynd Core: transparently substitute a user/org bring-your-own credential
+    # for the system provider when one applies to this request (no-op for the
+    # system scope). See core/backend/mynd/llm_auth/credential_injection.py.
+    from mynd.llm_auth.credential_injection import maybe_override_provider
+
+    llm_provider = maybe_override_provider(llm_provider)
+
     configured_max_input_tokens = _get_model_configured_max_input_tokens(
         llm_provider=llm_provider, model_name=model_name
     )

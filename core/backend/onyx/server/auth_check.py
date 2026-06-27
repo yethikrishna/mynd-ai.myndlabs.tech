@@ -83,6 +83,13 @@ PUBLIC_ENDPOINT_SPECS = [
     # craft webapp proxy — access enforced per-session via sharing_scope in handler
     ("/build/sessions/{session_id}/webapp", {"GET"}),
     ("/build/sessions/{session_id}/webapp/{path:path}", {"GET"}),
+    # mynd layer — public product-config endpoints (browser-safe subset only)
+    # These return public branding/feature config for the frontend before login.
+    ("/api/config", {"GET"}),
+    ("/api/config/{slug}", {"GET"}),
+    ("/api/config/{slug}/agents", {"GET"}),
+    # mynd llm-credentials provider listing — public metadata for the BYO-key UI
+    ("/api/llm-credentials/providers", {"GET"}),
 ]
 
 
@@ -118,6 +125,19 @@ def _is_require_permission_dependency(fn: object) -> bool:
 
 def _is_websocket_auth_dependency(fn: object) -> bool:
     return bool(getattr(fn, "_is_websocket_auth_dependency", False))
+
+
+def _is_mynd_auth_dependency(fn: object) -> bool:
+    """Detect mynd-layer dependencies that wrap Onyx's current_user.
+
+    ``mynd.dependencies.bind_request_context`` takes ``current_user`` as a
+    sub-dependency and is the canonical auth + context wiring for mynd routes.
+    We recognise it by its module+qualname so the checker doesn't need to
+    import the mynd package (which may not always be present).
+    """
+    module = getattr(fn, "__module__", "") or ""
+    qualname = getattr(fn, "__qualname__", "") or ""
+    return module.startswith("mynd.") and "bind_request_context" in qualname
 
 
 def check_router_auth(
@@ -164,6 +184,7 @@ def check_router_auth(
                     or depends_fn == verify_scim_token
                     or _is_require_permission_dependency(depends_fn)
                     or _is_websocket_auth_dependency(depends_fn)
+                    or _is_mynd_auth_dependency(depends_fn)
                 ):
                     found_auth = True
                     break

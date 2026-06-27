@@ -1,0 +1,26 @@
+# mynd Core backend image.
+#
+# The mynd backend layer already lives inside the Onyx backend (core/backend/mynd),
+# so it is built into the standard Onyx backend image. This thin overlay image
+# adds the repo-root product config (and overlay docs) and points the config
+# loader at it. Build with the REPO ROOT as the build context:
+#
+#   docker build -f ops/deploy/Dockerfile.mynd \
+#     --build-arg ONYX_BACKEND_IMAGE=<your-built-onyx-backend-image> \
+#     -t mynd-core-backend .
+#
+# Where ONYX_BACKEND_IMAGE is the image produced from core/backend/Dockerfile.
+
+ARG ONYX_BACKEND_IMAGE=onyx-backend:latest
+FROM ${ONYX_BACKEND_IMAGE}
+
+# Bundle per-product config and make the loader find it.
+COPY config /app/config
+ENV MYND_CONFIG_DIR=/app/config
+
+# Overlay docs/contract (overlay *code* is bundled in the web image via web/src/mynd).
+COPY overlay /app/overlay
+
+# Credential encryption defaults to a cloud KMS in production. Provide
+# MYND_KMS_PROVIDER / MYND_GCP_KMS_KEY (or AWS equivalents) at runtime.
+ENV MYND_KMS_PROVIDER=gcp
