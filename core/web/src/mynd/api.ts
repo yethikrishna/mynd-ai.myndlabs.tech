@@ -19,6 +19,33 @@ export const fetchProductConfig = (slug: string): Promise<ProductConfig> =>
 export const fetchProductSlugs = (): Promise<{ products: string[] }> =>
   errorHandlingFetcher<{ products: string[] }>("/api/config");
 
+// --- product agents + capabilities ---------------------------------------
+export const productAgentsKey = (slug: string) => `/api/config/${slug}/agents`;
+
+export interface ProductAgent {
+  key: string;
+  name: string;
+  description: string;
+  persona_name: string;
+}
+
+export const fetchProductAgents = (
+  slug: string
+): Promise<{ agents: ProductAgent[] }> =>
+  errorHandlingFetcher<{ agents: ProductAgent[] }>(productAgentsKey(slug));
+
+export const capabilitiesKey = (slug: string) =>
+  `/api/product/${slug}/capabilities`;
+
+export interface Capabilities {
+  slug: string;
+  role: string;
+  capabilities: string[];
+}
+
+export const fetchCapabilities = (slug: string): Promise<Capabilities> =>
+  errorHandlingFetcher<Capabilities>(capabilitiesKey(slug));
+
 // --- llm credentials ------------------------------------------------------
 export const providersKey = "/api/llm-credentials/providers";
 

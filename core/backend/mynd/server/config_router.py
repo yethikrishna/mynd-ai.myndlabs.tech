@@ -32,3 +32,27 @@ def get_product(slug: str) -> dict:
     if config is None:
         raise OnyxError(OnyxErrorCode.NOT_FOUND, f"Unknown product '{slug}'.")
     return config.public_dict()
+
+
+@router.get("/{slug}/agents")
+def get_product_agents(slug: str) -> dict:
+    """Agent template summaries for the product's app-shell sidebar.
+
+    Names/descriptions only — not secret. Their seeded Onyx persona is named
+    ``[mynd:<slug>] <name>`` (see mynd.products.agent_seeder).
+    """
+    config = get_product_config(slug)
+    if config is None:
+        raise OnyxError(OnyxErrorCode.NOT_FOUND, f"Unknown product '{slug}'.")
+    agents = config.agents.get("agents", []) or []
+    return {
+        "agents": [
+            {
+                "key": a.get("key"),
+                "name": a.get("name") or a.get("key"),
+                "description": a.get("description", ""),
+                "persona_name": f"[mynd:{slug}] {a.get('name') or a.get('key')}",
+            }
+            for a in agents
+        ]
+    }

@@ -36,6 +36,7 @@ def register_mynd(application: FastAPI) -> None:
     from mynd.llm_auth.router import router as llm_credentials_router
     from mynd.routing.product_router import ProductContextMiddleware
     from mynd.server.config_router import router as config_router
+    from mynd.server.product_api import router as product_api_router
 
     # Middleware runs for every request: stamps request.state.product_slug.
     application.add_middleware(ProductContextMiddleware)
@@ -44,6 +45,7 @@ def register_mynd(application: FastAPI) -> None:
     # include_router_with_global_prefix_prepended, but these paths are already
     # absolute (/api/..., /oauth/...) and are intentionally registered raw.
     application.include_router(config_router)
+    application.include_router(product_api_router)
     application.include_router(llm_credentials_router)
     application.include_router(oauth_callback_router)
 

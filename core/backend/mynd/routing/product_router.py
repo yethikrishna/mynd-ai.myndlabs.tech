@@ -36,6 +36,10 @@ RESERVED_PREFIXES: set[str] = {
 KNOWN_PRODUCT_SLUGS: set[str] = set(list_product_slugs())
 
 
+PRODUCT_HEADER = "x-mynd-product"
+PRODUCT_COOKIE = "mynd_product"
+
+
 def extract_slug_from_path(path: str, known: set[str]) -> str | None:
     """Return the product slug for a path, or ``None`` if not product-scoped."""
     segments = [s for s in path.split("/") if s]
@@ -46,6 +50,28 @@ def extract_slug_from_path(path: str, known: set[str]) -> str | None:
         return None
     if first in known:
         return first
+    return None
+
+
+def resolve_request_slug(request: Request, known: set[str]) -> str | None:
+    """Determine the product for a request.
+
+    Onyx's own API lives under ``/api`` (a reserved prefix), so API calls can't
+    carry the product in the path. Resolve in order:
+        1. path first segment (product landing/settings pages)
+        2. ``X-Mynd-Product`` header (mynd frontend fetchers set this)
+        3. ``mynd_product`` cookie (set by the app shell; carries context to all
+           subsequent calls, including Onyx's own chat/connector requests)
+    """
+    slug = extract_slug_from_path(request.url.path, known)
+    if slug:
+        return slug
+    header = request.headers.get(PRODUCT_HEADER)
+    if header and header.lower() in known:
+        return header.lower()
+    cookie = request.cookies.get(PRODUCT_COOKIE)
+    if cookie and cookie.lower() in known:
+        return cookie.lower()
     return None
 
 
@@ -65,7 +91,7 @@ class ProductContextMiddleware(BaseHTTPMiddleware):
             known = set(list_product_slugs())
             KNOWN_PRODUCT_SLUGS.update(known)
 
-        slug = extract_slug_from_path(request.url.path, known)
+        slug = resolve_request_slug(request, known)
         request.state.product_slug = slug
 
         # Mirror onto the request-scoped ContextVar so deep Onyx call paths

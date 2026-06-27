@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext } from "react";
+import React, { createContext, useContext, useEffect } from "react";
 import useSWR from "swr";
 import { errorHandlingFetcher } from "@/lib/fetcher";
 import { productConfigKey } from "./api";
@@ -36,6 +36,15 @@ export function ProductProvider({
     slug ? productConfigKey(slug) : null,
     errorHandlingFetcher
   );
+
+  // Carry product context to ALL subsequent API calls (including Onyx's own
+  // chat/connector requests, which are not under /<slug>) via a cookie the
+  // backend middleware reads. This is what makes BYO-credential resolution and
+  // per-product audit fire for the chat experience.
+  useEffect(() => {
+    if (typeof document === "undefined" || !slug) return;
+    document.cookie = `mynd_product=${slug}; path=/; SameSite=Lax`;
+  }, [slug]);
 
   const config = data ?? null;
   const style = config

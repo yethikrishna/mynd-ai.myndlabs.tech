@@ -584,6 +584,11 @@ def handle_send_chat_message(
     """
     logger.debug("Received new chat message: %s", chat_message_req.message)
 
+    # mynd Core: per-product audit (best-effort; no-op outside a product).
+    from mynd.auth.audit_hooks import audit_chat_send
+
+    audit_chat_send(request, user)
+
     tenant_id = get_current_tenant_id()
     mt_cloud_telemetry(
         tenant_id=tenant_id,

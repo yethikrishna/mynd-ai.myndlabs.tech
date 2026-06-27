@@ -26,7 +26,10 @@ Onyx. See `/ARCHITECTURE.md` for the full conceptual→physical mapping.
 | `mynd.llm_auth.credential_injection` | Applies BYO creds at `llm_from_provider` |
 | `mynd.llm_auth.token_refresh` | Celery task refreshing OAuth tokens |
 | `mynd.isolation` | Index namespacing + connector scope enforcement |
-| `mynd.server.config_router` | `GET /api/config[/{slug}]` for the frontend |
+| `mynd.products.agent_seeder` | Seed `agents.yaml` → Onyx personas (`python -m mynd.products.seed`) |
+| `mynd.auth.audit_hooks` | Best-effort call-site hooks (e.g. `chat.send`) |
+| `mynd.server.config_router` | `GET /api/config[/{slug}]` (+ `/agents`) |
+| `mynd.server.product_api` | `GET /api/product/{slug}/capabilities` |
 | `mynd.celery_schedule` | Beat schedule additions (token refresh) |
 | `mynd.integration` | `register_mynd(app)` — the single wiring point |
 

@@ -57,7 +57,7 @@ layout literally.
 
 ## 3. How the layer attaches to Onyx
 
-There are exactly **two** small upstream edits, both guarded and rebase-friendly:
+There are exactly **three** small upstream edits, all guarded and rebase-friendly:
 
 1. `onyx/main.py::get_application()` — one call before `return application`:
 
@@ -79,16 +79,29 @@ There are exactly **two** small upstream edits, both guarded and rebase-friendly
    A no-op for the system scope; substitutes a user/org BYO credential when one
    applies to the current request.
 
+3. `onyx/server/query_and_chat/chat_backend.py::handle_send_chat_message()` —
+   one guarded call that records a `chat.send` audit entry for the active
+   product (no-op outside a product).
+
 **Onyx's own auth, RBAC, chat, RAG, and connectors are otherwise untouched.**
 
 ### Threading context without signature changes
 
-The product slug (from the URL) and the authenticated user/org are placed on
-request-scoped `ContextVar`s (`mynd.context`). The middleware sets the slug; the
+The product slug and the authenticated user/org are placed on request-scoped
+`ContextVar`s (`mynd.context`). The middleware sets the slug; the
 `bind_request_context` dependency sets user/org and records the product session.
 Because FastAPI runs the dependency, endpoint, and Onyx's synchronous DB/LLM
 calls in the same task, deep Onyx code (the LLM factory) reads these vars
 **without any Onyx function signature changing**.
+
+### Carrying product context to Onyx's own API calls
+
+Onyx's chat/connector calls hit `/api/...` (a reserved prefix), so the slug
+can't come from the path. `resolve_request_slug` resolves it in order:
+**path → `X-Mynd-Product` header → `mynd_product` cookie**. The frontend
+`ProductProvider` sets the cookie on entering a product, so every subsequent
+Onyx API call (chat included) is product-scoped — which is what makes
+BYO-credential resolution and per-product audit fire for the chat experience.
 
 ## 4. Request flow
 
@@ -145,7 +158,16 @@ resolved scope is recorded on the audit log.
 
 Config-only: create `config/<new-slug>/{product,rbac,agents,connectors}.yaml`.
 The slug is discovered automatically by the config loader and routing
-middleware. Add an `overlay/<slug>-overlay.tsx` only if you need custom UI.
+middleware. Then seed the product's agents into Onyx personas:
+
+```bash
+python -m mynd.products.seed   # idempotent; run per tenant in cloud mode
+```
+
+`mynd.products.agent_seeder` upserts a persona named `[mynd:<slug>] <Agent>`
+per `agents.yaml` entry, so the app-shell sidebar surfaces agents that actually
+work in Onyx chat. Add an overlay (`web/src/mynd/overlays/<slug>.tsx`) only if
+you need custom UI.
 
 ## 8. Frontend (`core/web/src/mynd`)
 
@@ -161,12 +183,15 @@ sections,views}`) is reused as-is; only content + accent color vary per product.
   defaults" vs "bring your own key" (user + org scopes), optional base URL for
   OpenAI-compatible/proxy/local endpoints, and OAuth "Connect" for providers
   that support it.
+- `[productSlug]/app/page.tsx` → `ProductAppShell` + `ProductSidebar`: the
+  product-branded shell. The sidebar surfaces enabled agents (seeded personas)
+  and connectors from config, gates admin actions by capabilities
+  (`/api/product/<slug>/capabilities`), and launches Onyx's real chat with the
+  product's agent. It does not re-mount Onyx's chat client; the `mynd_product`
+  cookie carries product context into Onyx's own API calls instead.
 - `overlays/` — buildable product-overlay registry (the repo-root `/overlay`
   holds the contract; overlays live here because they use the `@/` alias).
 
 > Build status: the frontend follows Onyx's conventions and primitives but was
 > authored without a local `node_modules` (no `tsc`/Next build in this
 > environment). Run `bun install && bunx tsc --noEmit` before shipping.
-
-**Natural next increment:** point the product app shell (`/<slug>/app`) at the
-slug so the sidebar surfaces the enabled agents/connectors from `config/<slug>`.
