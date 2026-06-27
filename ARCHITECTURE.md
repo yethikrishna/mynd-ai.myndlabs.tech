@@ -171,9 +171,12 @@ resolved scope is recorded on the audit log.
   document **tag** into every search (reusing Onyx's existing Vespa tag filter,
   no schema change), so one product/org's documents never surface in another's
   (combined with Onyx ACLs, never the sole gate). Gated by
-  `MYND_RETRIEVAL_ISOLATION` (**OFF by default**): it requires documents to be
-  tagged at index time via `product_document_tags`, which in turn needs a
-  connector→product binding. Turn it on only once indexing tags are in place.
+  `MYND_RETRIEVAL_ISOLATION` (**OFF by default**). The index-time half is wired:
+  bind a connector to a product (`PUT /api/product/<slug>/connectors/<cc_pair_id>`,
+  stored in `mynd_shared.connector_product_map`) and `mynd.isolation.indexing`
+  tags that connector's documents with `mynd_product`/`mynd_org` at index time
+  (one guarded call in `onyx/indexing/indexing_pipeline.py`). To switch on: bind
+  connectors, re-index so existing docs get tagged, then set the flag.
 - `index_namespace` / `retrieval_filter` — namespace strings/filters for callers
   that key their own indices by product+org.
 - `connector_isolation` — a product may only use connectors enumerated in its

@@ -499,6 +499,12 @@ def index_doc_batch_prepare(
     This preceeds indexing it into the actual document index."""
     documents = sanitize_documents_for_postgres(documents)
 
+    # mynd Core: tag documents with their product for retrieval isolation
+    # (no-op unless the connector is bound to a product and isolation is on).
+    from mynd.isolation.indexing import tag_documents_for_index
+
+    tag_documents_for_index(documents, index_attempt_metadata, db_session)
+
     # Create a trimmed list of docs that don't have a newer updated at
     # Shortcuts the time-consuming flow on connector index retries
     document_ids: list[str] = [document.id for document in documents]

@@ -25,7 +25,9 @@ Onyx. See `/ARCHITECTURE.md` for the full conceptual→physical mapping.
 | `mynd.llm_auth` | User/org credentials, OAuth, KMS crypto, resolver, injection |
 | `mynd.llm_auth.credential_injection` | Applies BYO creds at `llm_from_provider` |
 | `mynd.llm_auth.token_refresh` | Celery task refreshing OAuth tokens |
-| `mynd.isolation` | Index namespacing + connector scope enforcement |
+| `mynd.isolation` | Index namespacing, connector scope, retrieval isolation (query + index-time tagging) |
+| `mynd.db.connector_map` | Connector→product binding (`connector_product_map`) |
+| `mynd.settings` | Runtime flags (`MYND_PRODUCT`, `MYND_RETRIEVAL_ISOLATION`) |
 | `mynd.products.agent_seeder` | Seed `agents.yaml` → Onyx personas (`python -m mynd.products.seed`) |
 | `mynd.auth.audit_hooks` | Best-effort call-site hooks (e.g. `chat.send`) |
 | `mynd.server.config_router` | `GET /api/config[/{slug}]` (+ `/agents`) |
