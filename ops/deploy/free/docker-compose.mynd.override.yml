@@ -1,0 +1,36 @@
+# Overlay applied on top of Onyx's docker-compose.prod.yml.
+#
+#   docker compose --env-file .env \
+#     -f core/deployment/docker_compose/docker-compose.prod.yml \
+#     -f ops/deploy/free/docker-compose.mynd.override.yml up -d
+#
+# It bundles the per-product config into the backend containers (the mynd code
+# itself is already built into the image from core/backend) and threads the mynd
+# env. The shared multi-product deployment needs nothing more; for a standalone
+# single-product build, also set MYND_PRODUCT and rebuild the web image with the
+# NEXT_PUBLIC_MYND_PRODUCT build arg (see ops/deploy/free/README.md).
+
+services:
+  api_server:
+    environment:
+      - MYND_CONFIG_DIR=/app/config
+      - MYND_KMS_PROVIDER=${MYND_KMS_PROVIDER:-local}
+      - MYND_LOCAL_ENCRYPTION_KEY=${MYND_LOCAL_ENCRYPTION_KEY}
+      - MYND_RETRIEVAL_ISOLATION=${MYND_RETRIEVAL_ISOLATION:-false}
+      - MYND_PRODUCT=${MYND_PRODUCT:-}
+    volumes:
+      - ${MYND_CONFIG_HOST_DIR}:/app/config:ro
+
+  background:
+    environment:
+      - MYND_CONFIG_DIR=/app/config
+      - MYND_KMS_PROVIDER=${MYND_KMS_PROVIDER:-local}
+      - MYND_LOCAL_ENCRYPTION_KEY=${MYND_LOCAL_ENCRYPTION_KEY}
+      - MYND_RETRIEVAL_ISOLATION=${MYND_RETRIEVAL_ISOLATION:-false}
+      - MYND_PRODUCT=${MYND_PRODUCT:-}
+    volumes:
+      - ${MYND_CONFIG_HOST_DIR}:/app/config:ro
+
+  web_server:
+    environment:
+      - NEXT_PUBLIC_MYND_PRODUCT=${MYND_PRODUCT:-}

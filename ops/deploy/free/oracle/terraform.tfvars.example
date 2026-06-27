@@ -1,0 +1,25 @@
+# Copy to terraform.tfvars and fill in. Get the OCI values from your Oracle
+# Cloud Console → Profile → API keys (and tenancy/region from the console URL).
+
+tenancy_ocid     = "ocid1.tenancy.oc1..xxxxx"
+user_ocid        = "ocid1.user.oc1..xxxxx"
+fingerprint      = "aa:bb:cc:dd:..."           # of the uploaded API key
+private_key_path = "~/.oci/oci_api_key.pem"    # the matching private key
+region           = "eu-frankfurt-1"            # a region with A1 free capacity
+compartment_ocid = "ocid1.tenancy.oc1..xxxxx"  # root compartment = your tenancy_ocid is fine
+
+# SSH public key contents (e.g. cat ~/.ssh/id_ed25519.pub)
+ssh_public_key = "ssh-ed25519 AAAA... you@host"
+
+# App
+domain            = "ai.myndlabs.tech"
+letsencrypt_email = "you@myndlabs.tech"
+
+# Repo (set github_token only if the repo is private)
+repo_url     = "https://github.com/yethikrishna/mynd-ai.myndlabs.tech.git"
+repo_branch  = "claude/mynd-core-architecture-j7jgyt"
+github_token = ""
+
+# Leave empty for the shared multi-product app (recommended on one free box).
+# Set to one slug (e.g. "eng") to deploy this box as that single product only.
+mynd_product = ""
