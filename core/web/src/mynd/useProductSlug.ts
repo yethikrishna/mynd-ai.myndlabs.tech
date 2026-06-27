@@ -24,8 +24,15 @@ const RESERVED = new Set([
   "nrf",
 ]);
 
-/** Derive the active product slug from the URL's first path segment. */
+/** Derive the active product slug from the URL's first path segment.
+ *
+ * In a standalone (single-product) deployment, NEXT_PUBLIC_MYND_PRODUCT pins
+ * the whole app to one product, so the slug is resolved regardless of path.
+ */
 export function useProductSlug(): string | null {
+  const pinned = process.env.NEXT_PUBLIC_MYND_PRODUCT;
+  if (pinned) return pinned.toLowerCase();
+
   const pathname = usePathname() ?? "";
   const first = pathname.split("/").filter(Boolean)[0]?.toLowerCase();
   if (!first || RESERVED.has(first)) return null;

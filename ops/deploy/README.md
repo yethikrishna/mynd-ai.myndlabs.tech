@@ -38,6 +38,36 @@ alembic -n schema_private upgrade head
 gcloud run services replace ops/deploy/cloudrun-service.yaml
 ```
 
+## Deployment topologies
+
+The same image runs in two modes:
+
+### A) Shared (default) — `ai.myndlabs.tech/<slug>`
+One service serves all products by path. `cloudrun-service.yaml`. No
+`MYND_PRODUCT`.
+
+### B) Standalone per-product — each product is its own app
+Set `MYND_PRODUCT=<slug>` (and `NEXT_PUBLIC_MYND_PRODUCT=<slug>` for the web
+build). The entire service is pinned to that product: every request — including
+Onyx's own `/api` calls — is scoped to it, with its own domain, scaling, and
+(optionally) its own database. Deploy one service per product
+(`mynd-core-eng`, `mynd-core-grc`, …) using
+`cloudrun-service-per-product.yaml`.
+
+To serve the product at the domain root (`/` instead of `/<slug>`), add a Next
+rewrite gated on the env var (single-product builds only):
+
+```js
+// next.config.js — rewrites()
+async rewrites() {
+  const p = process.env.NEXT_PUBLIC_MYND_PRODUCT;
+  return p ? [{ source: "/", destination: `/${p}` }] : [];
+}
+```
+
+Same codebase, same image — the env var is the only difference between "one app
+with six products" and "six separately deployed apps."
+
 ## Stack
 
 - **Cloud Run** — the Core container, all paths `/*`.

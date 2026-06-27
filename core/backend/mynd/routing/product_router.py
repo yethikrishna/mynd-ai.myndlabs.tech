@@ -58,11 +58,19 @@ def resolve_request_slug(request: Request, known: set[str]) -> str | None:
 
     Onyx's own API lives under ``/api`` (a reserved prefix), so API calls can't
     carry the product in the path. Resolve in order:
+        0. MYND_PRODUCT (single-product deployment — pins everything to one slug)
         1. path first segment (product landing/settings pages)
         2. ``X-Mynd-Product`` header (mynd frontend fetchers set this)
         3. ``mynd_product`` cookie (set by the app shell; carries context to all
            subsequent calls, including Onyx's own chat/connector requests)
     """
+    from mynd.settings import pinned_product_slug
+
+    pinned = pinned_product_slug()
+    if pinned:
+        # Standalone per-product deployment: the whole app is this product.
+        return pinned
+
     slug = extract_slug_from_path(request.url.path, known)
     if slug:
         return slug

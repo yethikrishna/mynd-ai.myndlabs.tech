@@ -1,0 +1,48 @@
+# Per-product (standalone) deployment of mynd Core.
+#
+# Same image as the shared deployment, but MYND_PRODUCT pins the whole service
+# to ONE product, so it behaves as that product's own app on its own domain
+# (e.g. eng.myndlabs.tech, or ai.myndlabs.tech/eng fronted by its own service).
+# Deploy one of these per product (mynd-core-eng, mynd-core-grc, …).
+#
+#   gcloud run services replace ops/deploy/cloudrun-service-per-product.yaml
+#
+# Each product gets its own service name, domain, scaling, and (optionally) its
+# own database — full isolation. They still share the same codebase/image.
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: mynd-core-eng # one per product: mynd-core-<slug>
+  labels:
+    app: mynd-core
+    product: eng
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "1"
+        autoscaling.knative.dev/maxScale: "20"
+        run.googleapis.com/cloudsql-instances: PROJECT_ID:REGION:mynd-core-pg
+    spec:
+      containerConcurrency: 80
+      timeoutSeconds: 300
+      containers:
+        - image: REGION-docker.pkg.dev/PROJECT_ID/mynd/mynd-core@sha256:REPLACE
+          ports:
+            - containerPort: 8080
+          env:
+            # Pins this entire service to one product.
+            - name: MYND_PRODUCT
+              value: eng
+            - name: MYND_CONFIG_DIR
+              value: /app/config
+            - name: MYND_KMS_PROVIDER
+              value: gcp
+            # For the standalone frontend, the web build reads NEXT_PUBLIC_MYND_PRODUCT
+            # (set at build/deploy time) so `/` serves this product directly.
+            - name: NEXT_PUBLIC_MYND_PRODUCT
+              value: eng
+          resources:
+            limits:
+              cpu: "2"
+              memory: 4Gi

@@ -116,6 +116,26 @@ handler  ──▶  resolve_llm_credential(user→org→system)
          ──▶  log_product_action(... product_slug, llm_credential_scope ...)
 ```
 
+## 4a. Deployment topologies — are these separate apps?
+
+The products are **config overlays on one platform**, not six separate
+codebases. But the *same image* supports two deployment shapes:
+
+| | Shared (default) | Standalone per-product |
+| --- | --- | --- |
+| URL | `ai.myndlabs.tech/<slug>` | each product on its own domain/service |
+| Env | `MYND_PRODUCT` unset | `MYND_PRODUCT=<slug>` (+ `NEXT_PUBLIC_MYND_PRODUCT`) |
+| Process | one service, all products | one service **per product** |
+| DB | shared (`mynd_shared` + Onyx) | can be a dedicated DB per product |
+| Code | one image | **the same image**, pinned by env |
+
+In standalone mode, `resolve_request_slug` returns the pinned slug for *every*
+request (path/header/cookie ignored), so the deployment behaves end-to-end as
+that single product's app. This is what makes each product **individually
+deployable as a real app** — without forking the code. To a user, both shapes
+look like distinct branded apps; the difference is purely operational (one
+service vs. many).
+
 ## 5. Shared auth, per-product isolation
 
 - **Identity:** owned entirely by Onyx CE/EE (email/password, SSO/OIDC/SAML,
@@ -146,10 +166,16 @@ resolved scope is recorded on the audit log.
 
 ### Data isolation (`mynd.isolation`)
 
-- `index_namespace(slug, org_id, source)` / `retrieval_filter(slug, org_id)` —
-  namespace RAG indices and AND a metadata filter into every retrieval, so one
-  product/org's documents never surface in another's (combined with Onyx ACLs,
-  never the sole gate).
+- `apply_retrieval_isolation` — wired at the single `IndexFilters` finalize
+  point (`onyx/context/search/pipeline.py`); ANDs a `mynd_product`/`mynd_org`
+  document **tag** into every search (reusing Onyx's existing Vespa tag filter,
+  no schema change), so one product/org's documents never surface in another's
+  (combined with Onyx ACLs, never the sole gate). Gated by
+  `MYND_RETRIEVAL_ISOLATION` (**OFF by default**): it requires documents to be
+  tagged at index time via `product_document_tags`, which in turn needs a
+  connector→product binding. Turn it on only once indexing tags are in place.
+- `index_namespace` / `retrieval_filter` — namespace strings/filters for callers
+  that key their own indices by product+org.
 - `connector_isolation` — a product may only use connectors enumerated in its
   `connectors.yaml`, with the declared scopes/filters; `assert_connector_allowed`
   enforces it.
