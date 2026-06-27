@@ -1,0 +1,13 @@
+agents:
+  - key: ticket_responder
+    name: "Ticket Responder"
+    description: "Drafts grounded replies from the knowledge base and past tickets."
+    tools: [kb_search, ticket_search]
+  - key: macro_suggester
+    name: "Macro Suggester"
+    description: "Suggests the best macro/canned response for a ticket."
+    tools: [ticket_search, kb_search]
+  - key: escalation_summarizer
+    name: "Escalation Summarizer"
+    description: "Summarizes a ticket thread for engineering escalation."
+    tools: [ticket_search]

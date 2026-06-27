@@ -1,0 +1,13 @@
+connectors:
+  zendesk:
+    scopes: [tickets_read, articles_read]
+  intercom:
+    scopes: [conversations_read, articles_read]
+  confluence:
+    scopes: [pages_read]
+    filters:
+      labels: [kb, support]
+  slack:
+    scopes: [channels_read]
+    filters:
+      channels: ["#support", "#support-escalations"]

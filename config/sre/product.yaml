@@ -1,0 +1,20 @@
+name: "mynd SRE Command"
+slug: "sre"
+description: "AI copilot for incidents, alerts, and operational runbooks."
+branding:
+  primary_color: "#DC2626"
+  logo: "/assets/sre-logo.svg"
+  marketing_tagline: "From alert to resolution, with context."
+enabled_connectors:
+  - github
+  - pagerduty
+  - datadog
+  - confluence
+  - slack
+default_llm_providers:
+  - anthropic
+  - openai
+features:
+  deep_research: true
+  code_execution: true
+  artifacts: true

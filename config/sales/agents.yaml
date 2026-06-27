@@ -1,0 +1,13 @@
+agents:
+  - key: account_briefer
+    name: "Account Briefer"
+    description: "Builds a pre-call brief from CRM, email, and notes."
+    tools: [crm_search, doc_search, email_search]
+  - key: deal_risk_scout
+    name: "Deal Risk Scout"
+    description: "Flags at-risk deals from activity and sentiment signals."
+    tools: [crm_search, email_search]
+  - key: followup_writer
+    name: "Follow-up Writer"
+    description: "Drafts follow-up emails grounded in the latest interactions."
+    tools: [email_search, crm_search]

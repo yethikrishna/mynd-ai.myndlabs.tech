@@ -1,0 +1,15 @@
+connectors:
+  github:
+    scopes: [repo_read, ci_logs_read, deployments_read]
+  pagerduty:
+    scopes: [incidents_read, services_read]
+  datadog:
+    scopes: [monitors_read, events_read]
+  confluence:
+    scopes: [pages_read]
+    filters:
+      labels: [runbook, sre, oncall]
+  slack:
+    scopes: [channels_read]
+    filters:
+      channels: ["#incidents", "#sre"]

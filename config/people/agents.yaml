@@ -1,0 +1,13 @@
+agents:
+  - key: policy_answerer
+    name: "Policy Answerer"
+    description: "Answers HR/policy questions grounded in the handbook."
+    tools: [doc_search]
+  - key: onboarding_buddy
+    name: "Onboarding Buddy"
+    description: "Guides new hires through onboarding steps and resources."
+    tools: [doc_search]
+  - key: benefits_explainer
+    name: "Benefits Explainer"
+    description: "Explains benefits and leave policies for an employee's region."
+    tools: [doc_search]

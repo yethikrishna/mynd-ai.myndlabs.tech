@@ -1,0 +1,11 @@
+# Connector scoping for mynd Engineering. Credentials are segmented per
+# product/org and never shared with other products (see ARCHITECTURE.md §8).
+connectors:
+  github:
+    scopes: [repo_read, ci_logs_read]
+  gitlab:
+    scopes: [repo_read, pipeline_read]
+  jira:
+    scopes: [issues_read]
+  confluence:
+    scopes: [pages_read]

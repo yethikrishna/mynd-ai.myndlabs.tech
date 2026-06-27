@@ -1,0 +1,14 @@
+# Agent templates available within mynd Engineering.
+agents:
+  - key: service_explainer
+    name: "Service Explainer"
+    description: "Explains how a service works from code, configs, and runbooks."
+    tools: [code_search, doc_search, code_execution]
+  - key: test_failure_analyzer
+    name: "Test Failure Analyzer"
+    description: "Diagnoses CI/test failures from logs and recent diffs."
+    tools: [ci_log_search, code_search]
+  - key: onboarding_guide_maker
+    name: "Onboarding Guide Maker"
+    description: "Generates onboarding guides for a repo or service."
+    tools: [doc_search, code_search]

@@ -1,0 +1,14 @@
+# Per-product roles. Mapped onto Onyx EE RBAC primitives at runtime by
+# mynd.auth.rbac.resolve_capabilities (Onyx remains the source of truth).
+roles:
+  - name: "admin"
+    permissions:
+      - manage_connectors
+      - manage_agents
+      - view_audit_logs
+      - manage_llm_credentials
+  - name: "member"
+    permissions:
+      - chat
+      - run_agents
+      - save_conversations

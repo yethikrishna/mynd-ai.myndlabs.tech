@@ -1,0 +1,13 @@
+agents:
+  - key: control_mapper
+    name: "Control Mapper"
+    description: "Maps evidence to SOC2 / ISO 27001 controls."
+    tools: [doc_search, evidence_search]
+  - key: gap_analyzer
+    name: "Gap Analyzer"
+    description: "Finds missing evidence and control gaps before an audit."
+    tools: [doc_search, evidence_search]
+  - key: policy_drafter
+    name: "Policy Drafter"
+    description: "Drafts and updates policies from templates and prior versions."
+    tools: [doc_search]

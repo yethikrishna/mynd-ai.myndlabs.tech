@@ -1,0 +1,20 @@
+name: "mynd ComplianceVault"
+slug: "grc"
+description: "AI copilot for GRC: evidence, controls, and audit readiness."
+branding:
+  primary_color: "#0F766E"
+  logo: "/assets/grc-logo.svg"
+  marketing_tagline: "Audit-ready, all year round."
+enabled_connectors:
+  - confluence
+  - google_drive
+  - jira
+  - slack
+default_llm_providers:
+  - anthropic
+  - openai
+features:
+  deep_research: true
+  code_execution: false
+  artifacts: true
+  document_level_rbac: true

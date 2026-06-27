@@ -1,0 +1,19 @@
+name: "mynd SalesAI"
+slug: "sales"
+description: "AI copilot for pipeline, accounts, and deal intelligence."
+branding:
+  primary_color: "#7C3AED"
+  logo: "/assets/sales-logo.svg"
+  marketing_tagline: "Know every account before the call."
+enabled_connectors:
+  - salesforce
+  - hubspot
+  - gmail
+  - google_drive
+default_llm_providers:
+  - openai
+  - anthropic
+features:
+  deep_research: true
+  code_execution: false
+  artifacts: true

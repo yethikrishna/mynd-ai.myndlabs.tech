@@ -1,0 +1,60 @@
+# mynd Core CI — lint, type-check, test, license scan, build.
+# Copy/symlink to .github/workflows/ci.yml to activate. Kept under ops/ so the
+# pipeline definition lives with the rest of the infra config.
+name: ci
+
+on:
+  push:
+    branches: ["main", "claude/**"]
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: core/backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+      - run: uv sync --frozen
+      - name: Lint + type-check (mynd layer)
+        run: |
+          uv run ruff check mynd
+          uv run mypy mynd
+      - name: Unit tests (mynd layer)
+        run: uv run pytest -q mynd/tests
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: core/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run lint
+      - run: bunx tsc --noEmit
+
+  config-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install pyyaml
+      - name: Validate product config
+        run: |
+          cd core/backend
+          MYND_CONFIG_DIR="$GITHUB_WORKSPACE/config" python -c \
+            "from mynd.platform_config.config_loader import list_product_slugs as l; \
+             s=l(); assert s, 'no products found'; print('products:', s)"
+
+  license-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan for copyleft transitive deps (fail on GPL/AGPL)
+        run: bash ops/ci/license_scan.sh

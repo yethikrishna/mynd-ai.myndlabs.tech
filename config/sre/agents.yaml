@@ -1,0 +1,13 @@
+agents:
+  - key: incident_commander
+    name: "Incident Commander"
+    description: "Correlates alerts, recent deploys, and runbooks during an incident."
+    tools: [alert_search, code_search, doc_search]
+  - key: runbook_finder
+    name: "Runbook Finder"
+    description: "Surfaces the right runbook for an alert and walks the steps."
+    tools: [doc_search, alert_search]
+  - key: postmortem_drafter
+    name: "Postmortem Drafter"
+    description: "Drafts a postmortem from the incident timeline and chat."
+    tools: [alert_search, doc_search]

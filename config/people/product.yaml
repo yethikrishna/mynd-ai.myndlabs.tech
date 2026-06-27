@@ -1,0 +1,20 @@
+name: "mynd PeopleOps"
+slug: "people"
+description: "AI copilot for HR policies, onboarding, and people questions."
+branding:
+  primary_color: "#DB2777"
+  logo: "/assets/people-logo.svg"
+  marketing_tagline: "Answers to every people question, grounded in policy."
+enabled_connectors:
+  - confluence
+  - google_drive
+  - slack
+  - notion
+default_llm_providers:
+  - anthropic
+  - openai
+features:
+  deep_research: false
+  code_execution: false
+  artifacts: true
+  document_level_rbac: true

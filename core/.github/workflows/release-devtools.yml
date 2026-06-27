@@ -1,0 +1,40 @@
+name: Release Devtools
+
+on:
+  push:
+    tags:
+      - "ods/v*.*.*"
+
+jobs:
+  pypi:
+    runs-on: ubuntu-latest
+    environment:
+      name: release-devtools
+    permissions:
+      contents: read # needed to checkout the repo on private repos (no-op on public)
+      id-token: write
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        os-arch:
+          - { goos: "linux", goarch: "amd64" }
+          - { goos: "linux", goarch: "arm64" }
+          - { goos: "windows", goarch: "amd64" }
+          - { goos: "windows", goarch: "arm64" }
+          - { goos: "darwin", goarch: "amd64" }
+          - { goos: "darwin", goarch: "arm64" }
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # ratchet:astral-sh/setup-uv@v8.2.0
+        with:
+          enable-cache: false
+          version: "0.9.9"
+      - run: |
+          GOOS="${{ matrix.os-arch.goos }}" \
+          GOARCH="${{ matrix.os-arch.goarch }}" \
+          uv build --wheel
+        working-directory: tools/ods
+      - run: uv publish
+        working-directory: tools/ods

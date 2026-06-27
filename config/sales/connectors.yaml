@@ -1,0 +1,11 @@
+connectors:
+  salesforce:
+    scopes: [accounts_read, opportunities_read, activities_read]
+  hubspot:
+    scopes: [contacts_read, deals_read]
+  gmail:
+    scopes: [messages_read]
+  google_drive:
+    scopes: [files_read]
+    filters:
+      folders: ["Sales/Collateral"]

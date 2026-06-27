@@ -1,0 +1,36 @@
+# Cloud Run service for mynd Core. One service serves all products by path.
+# Replace PROJECT_ID / REGION / image digest before applying:
+#   gcloud run services replace ops/deploy/cloudrun-service.yaml
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: mynd-core
+  labels:
+    app: mynd-core
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "1"
+        autoscaling.knative.dev/maxScale: "20"
+        run.googleapis.com/cloudsql-instances: PROJECT_ID:REGION:mynd-core-pg
+    spec:
+      containerConcurrency: 80
+      timeoutSeconds: 300
+      containers:
+        - image: REGION-docker.pkg.dev/PROJECT_ID/mynd/mynd-core@sha256:REPLACE
+          ports:
+            - containerPort: 8080
+          env:
+            # See ops/deploy/.env.example for the full list. Secrets come from
+            # Secret Manager, never from this file.
+            - name: MYND_CONFIG_DIR
+              value: /app/config
+            - name: MYND_KMS_PROVIDER
+              value: gcp
+            - name: POSTGRES_HOST
+              value: /cloudsql/PROJECT_ID:REGION:mynd-core-pg
+          resources:
+            limits:
+              cpu: "2"
+              memory: 4Gi

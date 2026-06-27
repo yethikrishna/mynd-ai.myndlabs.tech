@@ -1,0 +1,18 @@
+# Tightly scoped to compliance evidence only; document-level RBAC is enabled.
+connectors:
+  confluence:
+    scopes: [pages_read]
+    filters:
+      labels: [soc2, iso27001, evidence]
+  google_drive:
+    scopes: [files_read]
+    filters:
+      folders: ["Compliance/Evidence"]
+  jira:
+    scopes: [issues_read]
+    filters:
+      projects: [GRC, AUDIT]
+  slack:
+    scopes: [channels_read]
+    filters:
+      channels: ["#compliance", "#audit"]

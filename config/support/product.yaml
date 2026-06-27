@@ -1,0 +1,19 @@
+name: "mynd SupportFlow"
+slug: "support"
+description: "AI copilot for support deflection and agent assist."
+branding:
+  primary_color: "#EA580C"
+  logo: "/assets/support-logo.svg"
+  marketing_tagline: "Resolve tickets faster, with grounded answers."
+enabled_connectors:
+  - zendesk
+  - intercom
+  - confluence
+  - slack
+default_llm_providers:
+  - openai
+  - anthropic
+features:
+  deep_research: false
+  code_execution: false
+  artifacts: true

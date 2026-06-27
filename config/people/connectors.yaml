@@ -1,0 +1,16 @@
+# Document-level RBAC enabled: confidential HR docs gated by role.
+connectors:
+  confluence:
+    scopes: [pages_read]
+    filters:
+      spaces: [HR, PEOPLE]
+  google_drive:
+    scopes: [files_read]
+    filters:
+      folders: ["People/Handbook", "People/Policies"]
+  slack:
+    scopes: [channels_read]
+    filters:
+      channels: ["#people-ops"]
+  notion:
+    scopes: [pages_read]

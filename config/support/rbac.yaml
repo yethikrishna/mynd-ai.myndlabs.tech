@@ -1,0 +1,18 @@
+roles:
+  - name: "admin"
+    permissions:
+      - manage_connectors
+      - manage_agents
+      - view_audit_logs
+      - manage_llm_credentials
+  - name: "agent"
+    permissions:
+      - chat
+      - run_agents
+      - save_conversations
+      - view_tickets
+  - name: "member"
+    permissions:
+      - chat
+      - run_agents
+      - save_conversations

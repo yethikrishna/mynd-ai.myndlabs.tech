@@ -1,0 +1,19 @@
+name: "mynd Engineering"
+slug: "eng"
+description: "AI copilot for codebases, CI logs, and runbooks."
+branding:
+  primary_color: "#2563EB"
+  logo: "/assets/eng-logo.svg"
+  marketing_tagline: "Understand your entire codebase in minutes."
+enabled_connectors:
+  - github
+  - gitlab
+  - jira
+  - confluence
+default_llm_providers:
+  - openai
+  - anthropic
+features:
+  deep_research: true
+  code_execution: true
+  artifacts: true
