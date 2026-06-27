@@ -106,12 +106,16 @@ def handle_oauth_callback(
     resp.raise_for_status()
     tokens = resp.json()
 
+    import time
+
     payload = {
         "access_token": tokens.get("access_token"),
         "refresh_token": tokens.get("refresh_token"),
         "expires_in": tokens.get("expires_in"),
         "token_type": tokens.get("token_type"),
         "scope": tokens.get("scope"),
+        # Acquisition time, so the refresh worker can compute expiry.
+        "_obtained_at": time.time(),
     }
 
     # New OAuth connection becomes the default for this provider+product+user.

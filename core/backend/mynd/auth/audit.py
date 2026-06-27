@@ -36,8 +36,8 @@ logger = logging.getLogger("mynd.audit")
 def log_product_action(
     db: Session,
     *,
-    product_slug: str | None,
     action: str,
+    product_slug: str | None = None,
     user_id: uuid.UUID | None = None,
     org_id: str | None = None,
     resource_type: str | None = None,
@@ -45,6 +45,18 @@ def log_product_action(
     llm_provider: str | None = None,
     llm_credential_scope: str | None = None,
 ) -> None:
+    # Fall back to the request-scoped context when callers omit these, so most
+    # call sites only need to pass `action` (and resource info).
+    from mynd.context import current_llm_credential_scope
+    from mynd.context import current_org_id
+    from mynd.context import current_product_slug
+    from mynd.context import current_user_id
+
+    product_slug = product_slug or current_product_slug()
+    user_id = user_id or current_user_id()
+    org_id = org_id or current_org_id()
+    llm_credential_scope = llm_credential_scope or current_llm_credential_scope()
+
     try:
         entry = ProductAuditLog(
             user_id=user_id,

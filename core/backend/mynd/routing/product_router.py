@@ -65,7 +65,15 @@ class ProductContextMiddleware(BaseHTTPMiddleware):
             known = set(list_product_slugs())
             KNOWN_PRODUCT_SLUGS.update(known)
 
-        request.state.product_slug = extract_slug_from_path(
-            request.url.path, known
-        )
-        return await call_next(request)
+        slug = extract_slug_from_path(request.url.path, known)
+        request.state.product_slug = slug
+
+        # Mirror onto the request-scoped ContextVar so deep Onyx call paths
+        # (e.g. the LLM factory) can read it without signature changes.
+        from mynd.context import product_slug_ctx
+
+        token = product_slug_ctx.set(slug)
+        try:
+            return await call_next(request)
+        finally:
+            product_slug_ctx.reset(token)

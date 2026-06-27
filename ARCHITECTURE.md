@@ -57,17 +57,38 @@ layout literally.
 
 ## 3. How the layer attaches to Onyx
 
-Onyx builds its app in `onyx/main.py::get_application()`. The only upstream
-edit is one call just before `return application`:
+There are exactly **two** small upstream edits, both guarded and rebase-friendly:
 
-```python
-from mynd.integration import register_mynd
-register_mynd(application)
-```
+1. `onyx/main.py::get_application()` — one call before `return application`:
 
-`register_mynd` (idempotent) installs the product-context middleware and mounts
-the config / credential / oauth routers. **Onyx's own auth, RBAC, chat, RAG,
-and connectors are untouched.**
+   ```python
+   from mynd.integration import register_mynd
+   register_mynd(application)
+   ```
+
+   `register_mynd` (idempotent) installs the product-context middleware and
+   mounts the config / credential / oauth routers.
+
+2. `onyx/llm/factory.py::llm_from_provider()` — one call at the top:
+
+   ```python
+   from mynd.llm_auth.credential_injection import maybe_override_provider
+   llm_provider = maybe_override_provider(llm_provider)
+   ```
+
+   A no-op for the system scope; substitutes a user/org BYO credential when one
+   applies to the current request.
+
+**Onyx's own auth, RBAC, chat, RAG, and connectors are otherwise untouched.**
+
+### Threading context without signature changes
+
+The product slug (from the URL) and the authenticated user/org are placed on
+request-scoped `ContextVar`s (`mynd.context`). The middleware sets the slug; the
+`bind_request_context` dependency sets user/org and records the product session.
+Because FastAPI runs the dependency, endpoint, and Onyx's synchronous DB/LLM
+calls in the same task, deep Onyx code (the LLM factory) reads these vars
+**without any Onyx function signature changing**.
 
 ## 4. Request flow
 
@@ -104,7 +125,21 @@ Three scopes, resolved in precedence order **user → org → system**:
 
 Secrets are envelope-encrypted (`mynd.llm_auth.crypto`: GCP/AWS KMS in prod,
 Fernet locally) and never returned by the API. OAuth providers use the callback
-`https://ai.myndlabs.tech/oauth/callback/<provider>`.
+`https://ai.myndlabs.tech/oauth/callback/<provider>`; a Celery task
+(`mynd.llm_auth.token_refresh`, scheduled via `mynd.celery_schedule`) refreshes
+tokens nearing expiry. Resolution + injection happen in
+`mynd.llm_auth.credential_injection` at the `llm_from_provider` hook, and the
+resolved scope is recorded on the audit log.
+
+### Data isolation (`mynd.isolation`)
+
+- `index_namespace(slug, org_id, source)` / `retrieval_filter(slug, org_id)` —
+  namespace RAG indices and AND a metadata filter into every retrieval, so one
+  product/org's documents never surface in another's (combined with Onyx ACLs,
+  never the sole gate).
+- `connector_isolation` — a product may only use connectors enumerated in its
+  `connectors.yaml`, with the declared scopes/filters; `assert_connector_allowed`
+  enforces it.
 
 ## 7. Adding a product
 
@@ -112,11 +147,26 @@ Config-only: create `config/<new-slug>/{product,rbac,agents,connectors}.yaml`.
 The slug is discovered automatically by the config loader and routing
 middleware. Add an `overlay/<slug>-overlay.tsx` only if you need custom UI.
 
-## 8. Frontend (status)
+## 8. Frontend (`core/web/src/mynd`)
 
-The Onyx **Opal** design system (`core/web/src/{components,layouts,sections,
-views}`) is reused as-is. Per-product theming/branding comes from
-`GET /api/config/<slug>`. **Remaining frontend work** (not in this foundation
-commit): the product-context provider that fetches config at boot, the
-`/<slug>/settings/models` BYO-key UI, and per-product marketing pages composed
-from existing sections.
+The Onyx **Opal** design system (`core/web/src/{refresh-components,layouts,
+sections,views}`) is reused as-is; only content + accent color vary per product.
+
+- `ProductProvider` / `useProduct()` fetch `GET /api/config/<slug>` and apply
+  `--mynd-primary` to the product subtree.
+- `[productSlug]/page.tsx` → `ProductLanding`: config-driven marketing page
+  (hero, features, connectors, overlay widgets). Onyx static routes take
+  precedence over the dynamic `[productSlug]` segment.
+- `[productSlug]/settings/models/page.tsx` → `ModelSettingsPage`: "platform
+  defaults" vs "bring your own key" (user + org scopes), optional base URL for
+  OpenAI-compatible/proxy/local endpoints, and OAuth "Connect" for providers
+  that support it.
+- `overlays/` — buildable product-overlay registry (the repo-root `/overlay`
+  holds the contract; overlays live here because they use the `@/` alias).
+
+> Build status: the frontend follows Onyx's conventions and primitives but was
+> authored without a local `node_modules` (no `tsc`/Next build in this
+> environment). Run `bun install && bunx tsc --noEmit` before shipping.
+
+**Natural next increment:** point the product app shell (`/<slug>/app`) at the
+slug so the sidebar surfaces the enabled agents/connectors from `config/<slug>`.

@@ -17,11 +17,17 @@ Onyx. See `/ARCHITECTURE.md` for the full conceptual→physical mapping.
 | Module | Responsibility |
 | --- | --- |
 | `mynd.db.models` | `mynd_shared` SQLAlchemy tables (sessions, audit, credentials) |
-| `mynd.routing` | `ProductContextMiddleware` → `request.state.product_slug` |
+| `mynd.context` | Request-scoped `ContextVar`s (slug/user/org/scope) |
+| `mynd.routing` | `ProductContextMiddleware` → slug on `request.state` + context |
+| `mynd.dependencies` | `bind_request_context` — binds user/org, records session |
 | `mynd.platform_config` | Loads `config/<slug>/*.yaml` into typed `ProductConfig` |
 | `mynd.auth` | Session tracking, audit logging, per-product RBAC resolution |
-| `mynd.llm_auth` | User/org credentials, OAuth, KMS crypto, resolver (user→org→system) |
+| `mynd.llm_auth` | User/org credentials, OAuth, KMS crypto, resolver, injection |
+| `mynd.llm_auth.credential_injection` | Applies BYO creds at `llm_from_provider` |
+| `mynd.llm_auth.token_refresh` | Celery task refreshing OAuth tokens |
+| `mynd.isolation` | Index namespacing + connector scope enforcement |
 | `mynd.server.config_router` | `GET /api/config[/{slug}]` for the frontend |
+| `mynd.celery_schedule` | Beat schedule additions (token refresh) |
 | `mynd.integration` | `register_mynd(app)` — the single wiring point |
 
 ## Wiring

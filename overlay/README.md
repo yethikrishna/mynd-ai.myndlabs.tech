@@ -1,21 +1,30 @@
 # Product overlays
 
 Overlays are **thin, optional** product-specific frontend code (target: < 500
-LOC each) for UI that the standard Onyx layouts/sections/components don't cover.
-Most products need none — branding and content come from `config/<slug>/` and
-the shared Opal design system.
+LOC each) for UI the standard Onyx layouts/sections/components don't cover. Most
+products need none — branding and content come from `config/<slug>/` and the
+shared Opal design system.
 
-An overlay exports extension hooks that the app shell calls when a product slug
-is active. The registry in `index.ts` maps slug → overlay module.
+## Where overlays live
+
+Overlay implementations use the Next app's `@/` design-system alias (e.g.
+`@/refresh-components/cards`), so they must compile **inside** the web app:
+
+- **Buildable registry:** `core/web/src/mynd/overlays/`
+  - `index.ts` — the slug → overlay registry + `getOverlay(slug)`
+  - `<slug>.tsx` — per-product overlay (e.g. `grc.tsx`)
+- **Contract (framework-agnostic):** [`types.ts`](./types.ts) in this directory
+  documents the `ProductOverlay` shape.
+
+The landing page (`core/web/src/mynd/components/ProductLanding.tsx`) calls
+`getOverlay(slug).extendDashboard?.(slug)` to render overlay widgets.
 
 ## Contract
 
 ```ts
 export interface ProductOverlay {
-  /** Extra cards/widgets injected into the product dashboard. */
+  /** Extra cards/widgets injected into the product dashboard/landing. */
   extendDashboard?: (slug: string) => React.ReactNode[];
-  /** Extra routes mounted under /<slug>/... */
-  routes?: () => RouteDef[];
 }
 ```
 
