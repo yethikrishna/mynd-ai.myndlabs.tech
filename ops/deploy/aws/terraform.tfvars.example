@@ -1,0 +1,27 @@
+# Copy to terraform.tfvars and fill in. AWS creds come from your environment
+# (aws configure / SSO / env vars) — not from this file.
+
+region        = "us-east-1"
+instance_type = "t4g.xlarge" # 4 vCPU / 16 GB (ARM). t4g.large + onyx-lite is cheaper.
+
+# Save ~60-70% with Spot (can be interrupted; root EBS persists, EIP stays):
+use_spot       = false
+spot_max_price = ""
+
+root_volume_gb = 100
+
+# SSH
+ssh_public_key   = "ssh-ed25519 AAAA... you@host"
+allowed_ssh_cidr = "0.0.0.0/0" # tighten to YOUR_IP/32
+
+# App
+domain            = "ai.myndlabs.tech"
+letsencrypt_email = "you@myndlabs.tech"
+
+# Repo (token only if private)
+repo_url     = "https://github.com/yethikrishna/mynd-ai.myndlabs.tech.git"
+repo_branch  = "claude/mynd-core-architecture-j7jgyt"
+github_token = ""
+
+# Empty = shared multi-product app. A slug (e.g. "eng") = standalone product.
+mynd_product = ""
