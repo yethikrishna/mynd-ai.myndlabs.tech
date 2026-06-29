@@ -1,4 +1,15 @@
-# AWS deployment (EC2 + Terraform)
+# AWS deployment
+
+Two paths:
+
+- **`k8s/`** — **EKS (Kubernetes)**: deploy the **mynd-backend API first** with
+  Onyx's Helm chart + a thin mynd overlay. Start here if you want Kubernetes.
+- **This dir (EC2 + Terraform)** — a single VM running the whole stack via
+  Docker Compose. Simpler/cheaper for an all-in-one box.
+
+---
+
+# AWS single-VM deployment (EC2 + Terraform)
 
 Deploy the whole mynd Core stack (Onyx + the mynd layer + all products) on a
 single AWS EC2 instance, served publicly over HTTPS on your domain. Same

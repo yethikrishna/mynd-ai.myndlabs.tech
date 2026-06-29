@@ -1,0 +1,49 @@
+# mynd wrapper overlay for the Onyx Helm chart — API-first on EKS.
+#
+# Apply ON TOP of the chart's values-lite.yaml (Postgres only; no vector DB,
+# Redis, model servers, or celery). That gets just the backend API up:
+#
+#   helm upgrade --install mynd ./core/deployment/helm/charts/onyx \
+#     -f ./core/deployment/helm/charts/onyx/values-lite.yaml \
+#     -f ./ops/deploy/aws/k8s/values-mynd.yaml
+#
+# The only mynd-specific change is pointing the backend at OUR image (Onyx
+# backend + the mynd layer + the product config baked in) and threading the
+# mynd env. The api container runs `alembic upgrade head`, so the mynd_shared
+# migrations apply automatically.
+
+# First signup becomes admin. Switch to oidc/google_oauth later.
+configMap:
+  AUTH_TYPE: "basic"
+
+api:
+  replicaCount: 1
+  image:
+    # <ACCOUNT>.dkr.ecr.<REGION>.amazonaws.com/mynd-backend  (see build-and-push.sh)
+    repository: REPLACE_WITH_ECR_REPO
+    tag: "latest"
+  extraEnv:
+    - name: MYND_CONFIG_DIR
+      value: /app/config
+    - name: MYND_KMS_PROVIDER
+      value: local            # switch to "aws" + IRSA + MYND_AWS_KMS_KEY_ID for prod
+    - name: MYND_LOCAL_ENCRYPTION_KEY
+      valueFrom:
+        secretKeyRef:
+          name: mynd-secrets
+          key: MYND_LOCAL_ENCRYPTION_KEY
+    - name: MYND_RETRIEVAL_ISOLATION
+      value: "false"
+    # Standalone single-product? set this to a slug (e.g. "eng"); empty = shared.
+    - name: MYND_PRODUCT
+      value: ""
+
+# Expose the API publicly via the chart's ingress (AWS Load Balancer Controller
+# or ingress-nginx). For a first smoke test you can skip this and port-forward:
+#   kubectl port-forward svc/mynd-api-server 8080:8080
+# ingress:
+#   enabled: true
+#   className: alb
+#   hosts:
+#     - host: api.myndlabs.tech
+#       paths: [{ path: /, pathType: Prefix }]
