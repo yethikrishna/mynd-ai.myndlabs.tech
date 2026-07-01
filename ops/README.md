@@ -10,6 +10,7 @@ serves every product under `ai.myndlabs.tech/<slug>`.
 | `deploy/free/` | **Free public hosting** — Oracle Always Free VM via Terraform (start here) |
 | `deploy/aws/` | AWS EC2 (Graviton/ARM) via Terraform — paid, ~$20–100/mo |
 | `deploy/aws/k8s/` | AWS EKS (Kubernetes) — mynd-backend API via Onyx Helm chart + mynd overlay |
+| `deploy/vercel/` | Vercel — static product marketing site generated from `config/` |
 | `observability/` | Logging / metrics / tracing conventions |
 | `dns/` | DNS + SSL setup for `ai.myndlabs.tech` |
 

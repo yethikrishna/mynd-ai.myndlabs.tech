@@ -1,0 +1,12 @@
+# Vercel hosts only the static marketing site (ops/deploy/vercel/site).
+# Exclude everything else so the 68MB Onyx fork is never uploaded.
+*
+!vercel.json
+!ops
+ops/*
+!ops/deploy
+ops/deploy/*
+!ops/deploy/vercel
+ops/deploy/vercel/*
+!ops/deploy/vercel/site
+!ops/deploy/vercel/site/**
